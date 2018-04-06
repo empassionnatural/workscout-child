@@ -115,6 +115,12 @@ header#main-header.transparent{
     color: #5a5a5a;
 }
 
-.ln-icon-Money-2{
+.job_listings .ln-icon-Money-2{
     display: none;
+}
+.text-center{
+    text-align: center;
+}
+.mbs{
+    margin-bottom: 8px;
 }
