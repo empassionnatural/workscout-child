@@ -128,3 +128,7 @@ header#main-header.transparent{
     position: relative;
     top: 10px;
 }
+.company-h3{
+    background-color: #b2dfec;
+    padding-left: 20px;
+}
