@@ -124,3 +124,7 @@ header#main-header.transparent{
 .mbs{
     margin-bottom: 8px;
 }
+.fieldset-allow_facebook .input-checkbox{
+    position: relative;
+    top: 10px;
+}
