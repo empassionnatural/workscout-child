@@ -7,9 +7,7 @@
 	$registration_fields   = wpjm_get_registration_fields();
 	?>
 	<fieldset>
-	<div class="notification notice closeable margin-bottom-40">
-		
-		<p><span><?php esc_html_e( 'Have an account?', 'workscout' ); ?></span>
+	<div class="notification2 notice closeable margin-bottom-40">
 
 			<?php if ( $registration_enabled ) : ?>
 

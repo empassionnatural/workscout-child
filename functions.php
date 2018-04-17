@@ -127,3 +127,108 @@ function add_phone_field($option){
     return $option;
 }
 add_filter( 'job_application_form_fields', 'add_phone_field', 50 );
+
+add_filter( 'submit_job_form_login_required_message', 'custom_text_message_job_form', 20 );
+
+function custom_text_message_job_form(){
+
+	$html_output = '<a href="/sign-up/?type=employer">Sign up</a> as Employer</a> to post new job or <a href="/my-account/">Sign in</a> to get started!';
+    return $html_output;
+}
+
+add_action( 'init', 'custom_remove_workscout_hooks', 20 );
+
+function custom_remove_workscout_hooks(){
+    //remove register_form line 822 @workscout/inc/wp-job-manager.php
+
+	remove_action( 'register_form', 'workscout_register_form' );
+
+}
+
+/* modify register with role output */
+add_action( 'register_form', 'custom_workscout_register_form' );
+function custom_workscout_register_form() {
+	$role_status  = Kirki::get_option( 'workscout','pp_singup_role_status', false);
+	$role_revert  = Kirki::get_option( 'workscout','pp_singup_role_revert', false);
+	if(!$role_status) {
+		global $wp_roles;
+		echo '<label for="user_email">'.esc_html__('Choose account','workscout').'</label>';
+		echo '<select name="role" class="input chosen-select">';
+		if($role_revert){
+			echo '<option value="candidate">'.esc_html__("Applicant","workscout").'</option>';
+		}
+		echo '<option value="employer">'.esc_html__("Employer","workscout").'</option>';
+		if(!$role_revert){
+			echo '<option value="candidate">'.esc_html__("Applicant","workscout").'</option>';
+		}
+		echo '</select>';
+	}
+}
+
+/**
+ * workscout old registration form inline
+ * shortcode: add_shortcode('workscout_register_form', 'workscout_registration_form');
+ * file: workscout/inc/registration
+ */
+function workscout_registration_form_fields() {
+
+	ob_start();
+	$register_type = $_GET['type'];
+    $register_heading = ( $register_type == 'employer' ) ? 'Employer\'s Registration' : 'Register';
+	?>
+    <div class="entry-header">
+        <h3 class="headline margin-bottom-20"><?php esc_html_e( $register_heading,'workscout'); ?></h3>
+    </div>
+
+	<?php
+	// show any error messages after form submission
+	workscout_show_error_messages(); ?>
+
+    <form id="workscout_registration_form" class="workscout_form <?php echo $register_type ?>-signup" action="" method="POST">
+        <p class="status"></p>
+        <fieldset>
+            <p>
+                <label for="workscout_user_login"><?php _e('Username','workscout'); ?>
+                    <i class="ln ln-icon-Male"></i><input name="workscout_user_login" id="workscout_user_login" class="required" type="text"/>
+                </label>
+            </p>
+            <p>
+                <label for="workscout_user_email"><?php _e('Email','workscout'); ?>
+                    <i class="ln ln-icon-Mail"></i><input name="workscout_user_email" id="workscout_user_email" class="required" type="email"/>
+                </label>
+            </p>
+			<?php
+			$role_status  = Kirki::get_option( 'workscout','pp_singup_role_status', false);
+			$role_revert  = Kirki::get_option( 'workscout','pp_singup_role_revert', false);
+			if(!$role_status) {?>
+                <p>
+					<?php
+					echo '<label for="workscout_user_role">'.esc_html__('I\'m looking..','workscout').'</label>';
+					echo '<select name="workscout_user_role" id="workscout_user_role" class="input chosen-select">';
+					if( $role_revert && $register_type != 'employer' ) {
+						echo '<option value="candidate">'.esc_html__(".. for a job","workscout").'</option>';
+					}
+					echo '<option value="employer">'.esc_html__("..to hire","workscout").'</option>';
+					if( !$role_revert && $register_type != 'employer' ) {
+						echo '<option value="candidate">'.esc_html__(".. for a job","workscout").'</option>';
+					}
+					echo '</select>';
+					?>
+                </p>
+			<?php } ?>
+			<?php if( function_exists( 'gglcptch_display' ) ) { echo gglcptch_display(); } ; ?>
+            <p style="display:none">
+                <label for="confirm_email"><?php esc_html_e('Please leave this field empty','workscout'); ?></label>
+                <input type="text" name="confirm_email" id="confirm_email" class="input" value="">
+            </p>
+            <p>
+                <input type="hidden" name="workscout_register_nonce" value="<?php echo wp_create_nonce('workscout-register-nonce'); ?>"/>
+                <input type="hidden" name="workscout_register_check" value="1"/>
+				<?php  wp_nonce_field( 'ajax-register-nonce', 'security' );  ?>
+                <input type="submit" value="<?php _e('Register Your Account','workscout'); ?>"/>
+            </p>
+        </fieldset>
+    </form>
+	<?php
+	return ob_get_clean();
+}
