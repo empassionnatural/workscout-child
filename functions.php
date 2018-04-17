@@ -8,7 +8,7 @@ function workscout_enqueue_styles() {
 add_action( 'wp_enqueue_scripts', 'jobph_enqueue_styles', 50 );
 
 function jobph_enqueue_styles(){
-	wp_enqueue_style( 'custom-style', get_stylesheet_directory_uri(). '/css/custom-style.css' );
+	wp_enqueue_style( 'custom-style', get_stylesheet_directory_uri(). '/css/custom-style.css', array(), '2.0.0' );
 }
 
 function remove_parent_theme_features() {
