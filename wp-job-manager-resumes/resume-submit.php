@@ -15,6 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+global $account_type;
+$job_id = ( isset( $_GET['job_id'] ) ) ? $_GET['job_id'] : $job_id;
+$account_type = 'applicant';
+
 wp_enqueue_script( 'wp-resume-manager-resume-submission' );
 ?>
 <form action="<?php echo $action; ?>" method="post" id="submit-resume-form" class="job-manager-form" enctype="multipart/form-data">
@@ -23,7 +27,7 @@ wp_enqueue_script( 'wp-resume-manager-resume-submission' );
 
 	<?php if ( apply_filters( 'submit_resume_form_show_signin', true ) ) : ?>
 
-		<?php get_job_manager_template( 'account-signin.php', array( 'class' => $class ), 'wp-job-manager-resumes', RESUME_MANAGER_PLUGIN_DIR . '/templates/' ); ?>
+		<?php get_job_manager_template( 'account-signin.php', array( 'class' => $class, 'job_id' => $job_id ), 'wp-job-manager-resumes', RESUME_MANAGER_PLUGIN_DIR . '/templates/' ); ?>
 
 	<?php endif; ?>
 

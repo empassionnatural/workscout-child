@@ -8,7 +8,7 @@ function workscout_enqueue_styles() {
 add_action( 'wp_enqueue_scripts', 'jobph_enqueue_styles', 50 );
 
 function jobph_enqueue_styles(){
-	wp_enqueue_style( 'custom-style', get_stylesheet_directory_uri(). '/css/custom-style.css', array(), '2.0.0' );
+	wp_enqueue_style( 'custom-style', get_stylesheet_directory_uri(). '/css/custom-style.css', array(), '2.2' );
 }
 
 function remove_parent_theme_features() {
@@ -148,19 +148,34 @@ function custom_remove_workscout_hooks(){
 /* modify register with role output */
 add_action( 'register_form', 'custom_workscout_register_form' );
 function custom_workscout_register_form() {
+    global $account_type;
+
 	$role_status  = Kirki::get_option( 'workscout','pp_singup_role_status', false);
 	$role_revert  = Kirki::get_option( 'workscout','pp_singup_role_revert', false);
+	$register_type = ( isset($_GET['type']) ) ? $_GET['type'] : $account_type;
+
 	if(!$role_status) {
 		global $wp_roles;
-		echo '<label for="user_email">'.esc_html__('Choose account','workscout').'</label>';
+		echo '<label for="user_email">'.esc_html__('Account type','workscout').'</label>';
 		echo '<select name="role" class="input chosen-select">';
-		if($role_revert){
-			echo '<option value="candidate">'.esc_html__("Applicant","workscout").'</option>';
-		}
-		echo '<option value="employer">'.esc_html__("Employer","workscout").'</option>';
-		if(!$role_revert){
-			echo '<option value="candidate">'.esc_html__("Applicant","workscout").'</option>';
-		}
+		switch($register_type){
+            case 'applicant':
+	            echo '<option value="candidate">'.esc_html__("Applicant","workscout").'</option>';
+                break;
+            case 'employer':
+	            echo '<option value="employer">'.esc_html__("Employer","workscout").'</option>';
+                break;
+            default:
+	            if($role_revert){
+		            echo '<option value="candidate">'.esc_html__("Applicant","workscout").'</option>';
+	            }
+	            echo '<option value="employer">'.esc_html__("Employer","workscout").'</option>';
+	            if(!$role_revert){
+		            echo '<option value="candidate">'.esc_html__("Applicant","workscout").'</option>';
+	            }
+                break;
+        }
+
 		echo '</select>';
 	}
 }
@@ -232,3 +247,88 @@ function workscout_registration_form_fields() {
 	<?php
 	return ob_get_clean();
 }
+
+//custom registration shortcode
+/**
+ * workscout registration
+ * function: workscout_registration_form
+ * shortcode: add_shortcode('workscout_registration_form', 'workscout_registration_form');
+ * file: workscout/inc/registration
+ * line: 5
+ */
+function custom_workscout_registration_form( $atts ) {
+
+	// only show the registration form to non-logged-in members
+	if(!is_user_logged_in()) {
+
+		$registration_enabled = get_option('users_can_register');
+
+		//default attributes
+		$referer = ( ! empty( $atts['redirect'] ) ) ? $atts['redirect'] : $_SERVER['REQUEST_URI'];
+        $type = ( ! empty( $atts['type'] ) ) ? $atts['type'] : '';
+		$url_param = array(
+		        'job_id' => $atts['job_id'],
+		        'type'    => $type,
+        );
+		$referer = $referer . '?' . http_build_query($url_param, '&amp;');
+
+		$default_atts = shortcode_atts( array(
+			'referer' => $referer,
+		), $atts );
+
+		//esc_attr( $default_atts['referer'] )
+
+		// only show the registration form if allowed
+		if($registration_enabled) { ?>
+            <form method="post" class="register workscout_form custom-register">
+
+				<?php do_action( 'woocommerce_register_form_start' ); ?>
+
+				<?php if ( 'no' === get_option( 'woocommerce_registration_generate_username' ) ) : ?>
+
+                    <p class="form-row form-row-wide">
+                        <label for="reg_username"><?php _e( 'Username', 'workscout' ); ?> <span class="required">*</span>
+                            <i class="ln ln-icon-Male"></i>
+                            <input type="text" class="input-text" name="username" id="reg_username" value="<?php if ( ! empty( $_POST['username'] ) ) echo esc_attr( $_POST['username'] ); ?>" />
+                        </label>
+                    </p>
+				<?php endif; ?>
+
+                <p class="form-row form-row-wide">
+                    <label for="reg_email"><?php _e( 'Email address', 'workscout' ); ?> <span class="required">*</span>
+                        <i class="ln ln-icon-Mail"></i><input type="email" placeholder="youremail@domain.com" class="input-text" name="email" id="reg_email" value="<?php if ( ! empty( $_POST['email'] ) ) echo esc_attr( $_POST['email'] ); ?>" />
+                    </label>
+                </p>
+
+				<?php if ( 'no' === get_option( 'woocommerce_registration_generate_password' ) ) : ?>
+
+                    <p class="form-row form-row-wide">
+                        <label for="reg_password"><?php _e( 'Password', 'workscout' ); ?> <span class="required">*</span>
+                            <i class="ln ln-icon-Lock-2"></i><input type="password" placeholder="Create a strong password" class="input-text" name="password" id="reg_password" />
+                        </label>
+                    </p>
+
+				<?php endif; ?>
+
+                <!-- Spam Trap -->
+                <div style="<?php echo ( ( is_rtl() ) ? 'right' : 'left' ); ?>: -999em; position: absolute;"><label for="trap"><?php _e( 'Anti-spam', 'workscout' ); ?></label><input type="text" name="email_2" id="trap" tabindex="-1" autocomplete="off" /></div>
+
+				<?php do_action( 'woocommerce_register_form' ); ?>
+				<?php do_action( 'register_form' ); ?>
+                <p></p>
+                <p class="register-btn form-row">
+					<?php wp_nonce_field( 'woocommerce-register', '_wpnonce', false ); ?>
+                    <?php echo '<input type="hidden" name="_wp_http_referer" value="'. esc_url( $default_atts['referer'] ) . '" />'; ?>
+                    <input type="submit" class="button" name="register" value="<?php esc_attr_e( 'Register', 'workscout' ); ?>" />
+                </p>
+                <p class="accept-terms">By clicking "Register" button, you agree to our <a href="/terms-conditions/">Terms of Service</a> and <a href="/privacy-policy/">Privacy Policy</a>. We'll send you an email with job alerts and account related only!</p>
+				<?php do_action( 'woocommerce_register_form_end' ); ?>
+
+            </form>
+		<?php } else {
+			_e('User registration is not enabled','workscout');
+		}
+
+	}
+}
+add_shortcode('custom_workscout_register_form', 'custom_workscout_registration_form');
